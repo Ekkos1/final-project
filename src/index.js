@@ -52,7 +52,7 @@ let searchForm = document.querySelector("#search-form");
 searchForm.addEventListener("submit", search);
 
 function fetchWeather(city, units = "metric") {
-  let key = "1266ad07b66517497b1acf79ea5a6a64";
+  let key = "57a05799ccd29f7c03a8c77711ff235c";
   axios
     .get(
       `http://api.openweathermap.org/geo/1.0/direct?q=${city}&limit=1&appid=${key}`
