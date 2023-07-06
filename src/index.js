@@ -55,15 +55,15 @@ function fetchWeather(city, units = "metric") {
   let key = "ebef9ca4a8de66ed586fac628fade056";
   axios
     .get(
-      `http://api.openweathermap.org/geo/1.0/direct?q=${city}&limit=1&appid=${key}`
+      `https://api.openweathermap.org/data/2.5/weather?q=${city}&limit=1&appid=${key}`
     )
     .then(({ data }) => {
-      const { lat, lon, name } = data[0];
+      const { lat, lon } = data.coord;
       axios
         .get(
           `https://api.openweathermap.org/data/2.5/onecall?lat=${lat}&lon=${lon}&appid=${key}&units=${units}`
         )
-        .then((response) => displayWeather(response, name));
+        .then((response) => displayWeather(response, data.name));
     });
 }
 
