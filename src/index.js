@@ -1,13 +1,4 @@
-function formatDate(date) {
-  let hours = date.getHours();
-  if (hours < 10) {
-    hours = `0${hours}`;
-  }
-  let minutes = date.getMinutes();
-  if (minutes < 10) {
-    minutes = `0${minutes}`;
-  }
-
+function getWeekday(date) {
   let dayIndex = date.getDay();
   let days = [
     "Sunday",
@@ -19,9 +10,27 @@ function formatDate(date) {
     "Saturday",
   ];
   let day = days[dayIndex];
+  return day;
+}
+function formatDate(date) {
+  let hours = date.getHours();
+  if (hours < 10) {
+    hours = `0${hours}`;
+  }
+  let minutes = date.getMinutes();
+  if (minutes < 10) {
+    minutes = `0${minutes}`;
+  }
+
+  const day = getWeekday(date);
 
   return `${day} ${hours}:${minutes}`;
 }
+
+function dateFromUTC(dt) {
+  return new Date(dt * 1000);
+}
+
 let dateElement = document.querySelector("#date");
 let currentTime = new Date();
 dateElement.innerHTML = formatDate(currentTime);
@@ -43,43 +52,69 @@ let searchForm = document.querySelector("#search-form");
 searchForm.addEventListener("submit", search);
 
 function fetchWeather(city, units = "metric") {
-  let key = "281450ec88936f4fa8ee9864682b49a0";
+  let key = "bd3bb6534458ba51b48c49f5155745b6";
   axios
     .get(
       `http://api.openweathermap.org/geo/1.0/direct?q=${city}&limit=1&appid=${key}`
     )
     .then(({ data }) => {
-      const { lat, lon } = data[0];
+      const { lat, lon, name } = data[0];
       axios
         .get(
-          `https://api.openweathermap.org/data/3.0/onecall?lat=${lat}&lon=${lon}&appid=${key}&units=${units}`
+          `https://api.openweathermap.org/data/2.5/onecall?lat=${lat}&lon=${lon}&appid=${key}&units=${units}`
         )
-        .then(displayWeather);
+        .then((response) => displayWeather(response, name));
     });
 }
 
-function displayWeather(response) {
-  const data = response.data;
-  const weather = data.weather[0];
+function displayWeather(response, city) {
+  const daily = response.data.daily;
+  const today = daily[0];
+
+  const { icon, description } = today.weather[0];
   let weatherSpan = document.querySelector("#temp");
-  let temperature = Math.round(data.main.temp);
+  let temperature = Math.round(today.temp.day);
   weatherSpan.innerHTML = `${temperature}`;
 
   let cityElement = document.querySelector("#city");
-  cityElement.innerHTML = response.data.name;
+  cityElement.innerHTML = city;
 
   let weatherIcon = document.querySelector("#weather-icon");
-  weatherIcon.src = `https://openweathermap.org/img/wn/${weather.icon}@2x.png`;
+  weatherIcon.src = `https://openweathermap.org/img/wn/${icon}@2x.png`;
 
   let weatherDesc = document.querySelector("#description");
-  weatherDesc.innerHTML = weather.description;
+  weatherDesc.innerHTML = description;
 
   let humidity = document.querySelector("#humidity");
-  humidity.innerHTML = data.main.humidity;
+  humidity.innerHTML = today.humidity;
   let wind = document.querySelector("#wind");
-  wind.innerHTML = `${data.wind.speed} ${
+  wind.innerHTML = `${today.wind_speed} ${
     currentUnits === "metric" ? "meter/sec" : "miles/hour"
   }`;
+
+  let forecast = document.querySelector("#forecast");
+  forecast.innerHTML = "";
+  const week = daily.slice(1);
+  week.forEach((day) => {
+    const { icon } = day.weather[0];
+    const template = `<div class="d-flex flex-column ">
+        <div class="text-center text-primary">${getWeekday(
+          dateFromUTC(day.dt)
+        )}</div>
+        <img src="${`https://openweathermap.org/img/wn/${icon}@2x.png`}"/>
+        <div class="hstack gap-3 justify-content-center">
+          <span class="text-primary-emphasis">${Math.round(
+            day.temp.min
+          )}°</span>
+          <span class="text-primary-emphasis">${Math.round(
+            day.temp.max
+          )}°</span>
+        </div>
+    </div>
+   `;
+
+    forecast.innerHTML = forecast.innerHTML + template;
+  });
 
   weatherBlock.classList.remove("d-none");
 }
